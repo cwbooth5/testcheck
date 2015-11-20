@@ -2,18 +2,20 @@
 
 """A test checker, for use prior to creating a review and checking in code."""
 
+import argparse
+import collections
+import re
 import subprocess
 import sys
-import re
-import collections
-import argparse
 
 
 def words(text):
+    """Return a list of all words in a given text."""
     return re.findall('[a-z]+', text.lower())
 
 
 def train(features):
+    """Return a dictionary of word occurrences."""
     model = collections.defaultdict(lambda: 1)
     for feature in features:
         model[feature] += 1
@@ -21,29 +23,33 @@ def train(features):
 
 
 NWORDS = train(words(file('corpus.txt').read()))
-alphabet = 'abcdefghijklmnopqrstuvwxyz'
+ALPHABET = 'abcdefghijklmnopqrstuvwxyz'
 
 
 def edits1(word):
+    """locate permutations"""
     s = [(word[:i], word[i:]) for i in range(len(word) + 1)]
     deletes = [a + b[1:] for a, b in s if b]
     transposes = [a + b[1] + b[0] + b[2:] for a, b in s if len(b) > 1]
-    replaces = [a + c + b[1:] for a, b in s for c in alphabet if b]
-    inserts = [a + c + b for a, b in s for c in alphabet]
+    replaces = [a + c + b[1:] for a, b in s for c in ALPHABET if b]
+    inserts = [a + c + b for a, b in s for c in ALPHABET]
     return set(deletes + transposes + replaces + inserts)
 
 
 def known_edits2(word):
+    """known edits"""
     return set(e2 for e1 in edits1(word) for e2 in edits1(e1) if e2 in NWORDS)
 
 
 def known(words):
+    """return a set of words from trained words"""
     return set(w for w in words if w in NWORDS)
 
 
 def correct(word):
-    candidates = known([word]) or known(edits1(word)) or\
-                       known_edits2(word) or [word]
+    """Find a corrected word."""
+    candidates = known([word]) or known(edits1(word)) or \
+        known_edits2(word) or [word]
     return max(candidates, key=NWORDS.get)
 
 
@@ -63,12 +69,17 @@ def add_term(term):
             afile.write('\n')
         print "[ term '%s' added ]" % term
 
+
 class CodeChecker(object):
-    """This class allows a number of simple code quality checks for python
-    files. It's meant to be used prior to review and check in.
+
+    """This class allows a number of simple code quality checks for python.
+
+    It's meant to be used prior to review and check in.
     """
+
     def __init__(self, inputfile, learning=False, verbose=False):
-        """The class works on one file at a time.
+        """Take a single input file as a target for checks.
+
         @param inputfile: The python file being checked
         @param learning: learning mode for the spell checker, defaults to False
         @param verbose: toggle verbose output
@@ -85,7 +96,6 @@ class CodeChecker(object):
         # reference_lines = defaultdict(list)
         with open(self.inputfile, 'r') as cfile:
             data = cfile.readlines()
-        # print '\n'
         for lineno, line in enumerate(data, 1):
             for term in [x.lower() for x in line.split()]:
                 if term.isalpha():
@@ -154,16 +164,16 @@ def main(parser):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Python code checker thing')
+    PARSER = argparse.ArgumentParser(description='Python code checker thing')
 
-    parser.add_argument('-a', action="store_true", dest="testall", default=False)
-    parser.add_argument('-s', action="store_true", dest="spell", default=False)
-    parser.add_argument('-c', action="store_true", dest="complex", default=False)
-    parser.add_argument('-m', action="store_true", dest="metrics", default=False)
-    parser.add_argument('-p', action="store_true", dest="lint", default=False)
-    parser.add_argument('-v', action="store_true", dest="verbose", default=False)
-    parser.add_argument('-l', action="store_true", dest="learning", default=False)
+    PARSER.add_argument('-a', action="store_true", dest="testall")
+    PARSER.add_argument('-s', action="store_true", dest="spell")
+    PARSER.add_argument('-c', action="store_true", dest="complex")
+    PARSER.add_argument('-m', action="store_true", dest="metrics")
+    PARSER.add_argument('-p', action="store_true", dest="lint")
+    PARSER.add_argument('-v', action="store_true", dest="verbose")
+    PARSER.add_argument('-l', action="store_true", dest="learning")
 
-    parser.add_argument('filename')
+    PARSER.add_argument('filename')
 
-    sys.exit(main(parser))
+    sys.exit(main(PARSER))
