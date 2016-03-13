@@ -56,7 +56,7 @@ def correct(word):
 def add_term(term):
     """Add a term to the spellchecker text if it's not already there."""
     # See if we already added it.
-    # Search in reverse, since these are ones F5 testers added.
+    # Search in reverse
     with open('corpus.txt') as ofile:
         for line in reversed(ofile.readlines()):
             if ' ' + term + ' ' in line.strip():
@@ -75,10 +75,15 @@ class CodeChecker(object):
     """This class allows a number of simple code quality checks for python.
 
     It's meant to be used prior to review and check in.
+
+    NOTE: It can and should be influenced by coding styles of the dev group.
+    That would mean a custom .pylintrc (for example) should probably be in
+    place prior to running this so pylint has something to reference which
+    specifies coding practices unique to this organization.
     """
 
     def __init__(self, inputfile, learning=False, verbose=False):
-        """Take a single input file as a target for checks.
+        """Take a single input file as a target for checks, all for learning.
 
         @param inputfile: The python file being checked
         @param learning: learning mode for the spell checker, defaults to False
@@ -94,9 +99,9 @@ class CodeChecker(object):
         """Execute the spell checker on the input file."""
         print '[ Spellcheck ]',
         # reference_lines = defaultdict(list)
-        with open(self.inputfile, 'r') as cfile:
+        with open(self.inputfile) as cfile:
             data = cfile.readlines()
-        for lineno, line in enumerate(data, 1):
+        for lineno, line in enumerate(data, start=1):
             for term in [x.lower() for x in line.split()]:
                 if term.isalpha():
                     # reference_lines[lineno].append(term)
@@ -166,14 +171,22 @@ def main(parser):
 if __name__ == "__main__":
     PARSER = argparse.ArgumentParser(description='Python code checker thing')
 
-    PARSER.add_argument('-a', action="store_true", dest="testall")
-    PARSER.add_argument('-s', action="store_true", dest="spell")
-    PARSER.add_argument('-c', action="store_true", dest="complex")
-    PARSER.add_argument('-m', action="store_true", dest="metrics")
-    PARSER.add_argument('-p', action="store_true", dest="lint")
-    PARSER.add_argument('-v', action="store_true", dest="verbose")
-    PARSER.add_argument('-l', action="store_true", dest="learning")
+    PARSER.add_argument('-a', action="store_true", dest="testall",
+                        help="Run all tests")
+    PARSER.add_argument('-s', action="store_true", dest="spell",
+                        help="run spellcheck")
+    PARSER.add_argument('-c', action="store_true", dest="complex",
+                        help="run Cyclomatic Complexity check")
+    PARSER.add_argument('-m', action="store_true", dest="metrics",
+                        help="print raw metrics")
+    PARSER.add_argument('-p', action="store_true", dest="lint",
+                        help="run pylint and show score")
+    PARSER.add_argument('-v', action="store_true", dest="verbose",
+                        help="toggle verbose mode in pylint")
+    PARSER.add_argument('-l', action="store_true", dest="learning",
+                        help="toggle learning of new keywords (for spellcheck)")
 
     PARSER.add_argument('filename')
 
-    sys.exit(main(PARSER))
+    sys.exit(main(parser=PARSER))
+

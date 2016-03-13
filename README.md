@@ -55,11 +55,11 @@ prompt$
 
 ## Motivation
 
-This exists because we need a consistent way to review code prior to check in. This will improve the code coming into the review stage as well as assist in improving the quality of existing code.
+This exists because I need a consistent way to review code prior to check in. This will improve the code coming into the review stage as well as assist in improving the quality of existing code.
 
 ## Installation
 
-You will need to install some things using *pip*. The package *flake8* contains pip and pylint.
+You will need to install some things using *pip*. The package *flake8* contains pip and pylint. If you already have pylint and pep8, you can skip this step.
 ```
 pip install flake8
 ```
