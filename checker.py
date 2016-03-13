@@ -9,6 +9,24 @@ import subprocess
 import sys
 
 
+def colorize(thestring, color, bold=False):
+    """Return a string colored and/or bolded."""
+    attr = []
+    # ANSI color codes
+    color_codes = {
+        "red": '31',
+        "green": '32',
+        "yellow": '33',
+        "blue": '34',
+        "magenta": '35',
+        "cyan": '36'
+    }
+    attr.append(color_codes.get(color))
+    if bold:
+        attr.append('1')
+    return '\x1b[%sm%s\x1b[0m' % (';'.join(attr), thestring)
+
+
 def words(text):
     """Return a list of all words in a given text."""
     return re.findall('[a-z]+', text.lower())
@@ -67,7 +85,7 @@ def add_term(term):
         with open('corpus.txt', 'a') as afile:
             afile.write(term)
             afile.write('\n')
-        print "[ term '%s' added ]" % term
+        print "[ term '%s' added ]" % colorize(term, "green", True)
 
 
 class CodeChecker(object):
@@ -97,7 +115,7 @@ class CodeChecker(object):
 
     def check_spelling(self):
         """Execute the spell checker on the input file."""
-        print '[ Spellcheck ]',
+        print colorize('[ Spellcheck ]', 'cyan'),
         # reference_lines = defaultdict(list)
         with open(self.inputfile) as cfile:
             data = cfile.readlines()
@@ -112,21 +130,28 @@ class CodeChecker(object):
                                                                    corrected)
                         if self.learning:
                             add_term(term)  # learning mode
+
         print '\t[DONE]'
 
     def complexity(self):
         """Calculate the complexity of the code"""
-        print '[ Cyclomatic Complexity ]'
-        print subprocess.check_output(['radon', 'cc', '-nae', self.inputfile])
+        print colorize('[ Cyclomatic Complexity ]', 'cyan')
+        raw = subprocess.check_output(['radon', 'cc', '-nae', self.inputfile])
+        raw = raw.replace('- A', colorize('- A', 'green', bold=True))
+        raw = raw.replace('- B', colorize('- B', 'green'))
+        raw = raw.replace('- C', colorize('- C', 'yellow'))
+        raw = raw.replace('- D', colorize('- D', 'magenta'))
+        raw = raw.replace('- F', colorize('- F', 'red', bold=True))
+        print raw
 
     def metrics(self):
         """obtain raw metrics like line counts"""
-        print '[ Raw Metrics ]'
+        print colorize('[ Raw Metrics ]', 'cyan')
         print subprocess.check_output(['radon', 'raw', self.inputfile])
 
     def pylint(self):
         """This runs pylint"""
-        print '[ pylint ]',
+        print colorize('[ pylint ]', 'cyan'),
         if self.verbose:
             subprocess.call(['pylint', '-r', 'n', self.inputfile])
 
@@ -189,4 +214,3 @@ if __name__ == "__main__":
     PARSER.add_argument('filename')
 
     sys.exit(main(parser=PARSER))
-
