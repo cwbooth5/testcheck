@@ -1,16 +1,20 @@
 #!/usr/bin/env python
 
 """A test checker, for use prior to creating a review and checking in code."""
-
+from __future__ import print_function
 import argparse
 import collections
 import re
 import subprocess
 import sys
+from colorama import init, Fore
+
+CORPUSFILE = '/etc/corpus.txt'
 
 
 def colorize(thestring, color, bold=False):
     """Return a string colored and/or bolded."""
+    init(autoreset=True)
     attr = []
     # ANSI color codes
     color_codes = {
@@ -24,7 +28,7 @@ def colorize(thestring, color, bold=False):
     attr.append(color_codes.get(color))
     if bold:
         attr.append('1')
-    return '\x1b[%sm%s\x1b[0m' % (';'.join(attr), thestring)
+    return '\x1b[' + ';'.join(attr) + 'm' + thestring + '\x1b[0m'
 
 
 def words(text):
@@ -40,7 +44,7 @@ def train(features):
     return model
 
 
-NWORDS = train(words(file('corpus.txt').read()))
+NWORDS = train(words(open(CORPUSFILE).read()))
 ALPHABET = 'abcdefghijklmnopqrstuvwxyz'
 
 
@@ -75,17 +79,22 @@ def add_term(term):
     """Add a term to the spellchecker text if it's not already there."""
     # See if we already added it.
     # Search in reverse
-    with open('corpus.txt') as ofile:
+    with open(CORPUSFILE) as ofile:
         for line in reversed(ofile.readlines()):
             if ' ' + term + ' ' in line.strip():
                 term = None
                 break
     # Add it if we never encountered it.
     if term:
-        with open('corpus.txt', 'a') as afile:
+        with open(CORPUSFILE, 'a') as afile:
             afile.write(term)
             afile.write('\n')
-        print "[ term '%s' added ]" % colorize(term, "green", True)
+        # print("[ term '%s' added ]" % colorize(term, "green", True))
+        print("[ term '" + Fore.GREEN + term + "' added ]")
+        # with colorama_text():
+        #     print(Fore.GREEN + term, end="")
+        # print("' added ]")
+
 
 
 class CodeChecker(object):
@@ -115,7 +124,7 @@ class CodeChecker(object):
 
     def check_spelling(self):
         """Execute the spell checker on the input file."""
-        print colorize('[ Spellcheck ]', 'cyan'),
+        print(Fore.CYAN + '[ Spellcheck ]' + Fore.RESET)
         # reference_lines = defaultdict(list)
         with open(self.inputfile) as cfile:
             data = cfile.readlines()
@@ -125,46 +134,53 @@ class CodeChecker(object):
                     # reference_lines[lineno].append(term)
                     corrected = correct(term)
                     if term != corrected:
-                        print "%d: Found '%s'; Corrected? '%s'" % (lineno,
+                        print("%d: Found '%s'; Corrected? '%s'" % (lineno,
                                                                    term,
-                                                                   corrected)
+                                                                   corrected))
                         if self.learning:
                             add_term(term)  # learning mode
 
-        print '\t[DONE]'
+        print('\t[DONE]')
 
     def complexity(self):
         """Calculate the complexity of the code"""
-        print colorize('[ Cyclomatic Complexity ]', 'cyan')
-        raw = subprocess.check_output(['radon', 'cc', '-nae', self.inputfile])
-        raw = raw.replace('- A', colorize('- A', 'green', bold=True))
-        raw = raw.replace('- B', colorize('- B', 'green'))
-        raw = raw.replace('- C', colorize('- C', 'yellow'))
-        raw = raw.replace('- D', colorize('- D', 'magenta'))
-        raw = raw.replace('- F', colorize('- F', 'red', bold=True))
-        print raw
+        print(Fore.CYAN + '[ Cyclomatic Complexity ]' + Fore.RESET)
+        raw = subprocess.check_output(['radon', 'cc', '-nae', self.inputfile], universal_newlines=True)
+        # raw = raw.replace('- A', colorize('- A', 'green', bold=True))
+        # raw = raw.replace('- B', colorize('- B', 'green'))
+        # raw = raw.replace('- C', colorize('- C', 'yellow'))
+        # raw = raw.replace('- D', colorize('- D', 'magenta'))
+        # raw = raw.replace('- F', colorize('- F', 'red', bold=True))
+        print(raw)
 
     def metrics(self):
         """obtain raw metrics like line counts"""
-        print colorize('[ Raw Metrics ]', 'cyan')
-        print subprocess.check_output(['radon', 'raw', self.inputfile])
+        print(Fore.CYAN + '[ Raw Metrics ]' + Fore.RESET)
+        print(subprocess.check_output(['radon', 'raw', self.inputfile], universal_newlines=True))
 
     def pylint(self):
         """This runs pylint"""
-        print colorize('[ pylint ]', 'cyan'),
+        print(Fore.CYAN + '[ pylint ]' + Fore.RESET)
         if self.verbose:
-            subprocess.call(['pylint', '-r', 'n', self.inputfile])
+            cmd = 'pylint -rn ' + self.inputfile
+        else:
+            cmd = 'pylint ' + self.inputfile
+        try:
+            score_output = subprocess.check_output(cmd, stderr=subprocess.STDOUT,
+                                                   universal_newlines=True,
+                                                   shell=True)
+        except subprocess.CalledProcessError as callproc:
+            # nonzero exit code was returned.
+            score_output = callproc.output
 
-        cmd = ['pylint', self.inputfile]
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)
-        score_output = proc.communicate()[0]
         for line in score_output.splitlines():
             if 'Your code has been rated' in line:
                 score = line.strip()
+                self.pylint_score = score
+                print(self.pylint_score)
                 break
-        self.pylint_score = score
-        print self.pylint_score
+        if self.verbose:
+            print(score_output)
 
     def run_everything(self):
         """Execute all available checks."""
