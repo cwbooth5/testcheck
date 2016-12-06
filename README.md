@@ -6,6 +6,7 @@ code review and/or check-in.
 ## Code Example
 
 Example: run all checks in verbose mode
+
 ```
 prompt$ ./checker.py checker.py -av
 [ Spellcheck ]  [DONE]
@@ -59,9 +60,10 @@ This exists because I need a consistent way to review code prior to check in. Th
 
 ## Installation
 
-You will need to install some things using *pip*. The package *flake8* contains pip and pylint. If you already have pylint and pep8, you can skip this step.
+You will need to install some things using *pip*. The package *flake8* contains pip and pylint. If you already have pylint and pep8, you can skip this step. There is also a required lib called *colorize* for terminal coloring.
+
 ```
-pip install flake8
+pip install -r requirements.txt
 ```
 
 ## Contributors
