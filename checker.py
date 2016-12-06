@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
 """A test checker, for use prior to creating a review and checking in code."""
-
+from __future__ import print_function
 import argparse
 import collections
 import re
 import subprocess
 import sys
-from colorama import init, Fore, colorama_text
+from colorama import init, Fore
 
 
 def colorize(thestring, color, bold=False):
@@ -26,8 +26,7 @@ def colorize(thestring, color, bold=False):
     attr.append(color_codes.get(color))
     if bold:
         attr.append('1')
-    foo = '\x1b[' + ';'.join(attr) + 'm' + thestring + '\x1b[0m'
-    return foo
+    return '\x1b[' + ';'.join(attr) + 'm' + thestring + '\x1b[0m'
 
 
 def words(text):
@@ -43,7 +42,7 @@ def train(features):
     return model
 
 
-NWORDS = train(words(open('corpus.txt').read()))
+NWORDS = train(words(open('/etc/corpus.txt').read()))
 ALPHABET = 'abcdefghijklmnopqrstuvwxyz'
 
 
@@ -89,10 +88,10 @@ def add_term(term):
             afile.write(term)
             afile.write('\n')
         # print("[ term '%s' added ]" % colorize(term, "green", True))
-        print("[ term '", end="")
-        with colorama_text():
-            print(Fore.GREEN + term, end="")
-        print("' added ]")
+        print("[ term '" + Fore.GREEN + term + "' added ]")
+        # with colorama_text():
+        #     print(Fore.GREEN + term, end="")
+        # print("' added ]")
 
 
 
@@ -123,7 +122,6 @@ class CodeChecker(object):
 
     def check_spelling(self):
         """Execute the spell checker on the input file."""
-        
         print(Fore.CYAN + '[ Spellcheck ]' + Fore.RESET)
         # reference_lines = defaultdict(list)
         with open(self.inputfile) as cfile:
@@ -166,7 +164,7 @@ class CodeChecker(object):
         else:
             cmd = 'pylint ' + self.inputfile
         try:
-            score_output = subprocess.check_output(cmd, stderr=subprocess.STDOUT, 
+            score_output = subprocess.check_output(cmd, stderr=subprocess.STDOUT,
                                                    universal_newlines=True,
                                                    shell=True)
         except subprocess.CalledProcessError as callproc:
