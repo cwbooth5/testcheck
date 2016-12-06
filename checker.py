@@ -9,6 +9,8 @@ import subprocess
 import sys
 from colorama import init, Fore
 
+CORPUSFILE = '/etc/corpus.txt'
+
 
 def colorize(thestring, color, bold=False):
     """Return a string colored and/or bolded."""
@@ -42,7 +44,7 @@ def train(features):
     return model
 
 
-NWORDS = train(words(open('/etc/corpus.txt').read()))
+NWORDS = train(words(open(CORPUSFILE).read()))
 ALPHABET = 'abcdefghijklmnopqrstuvwxyz'
 
 
@@ -77,14 +79,14 @@ def add_term(term):
     """Add a term to the spellchecker text if it's not already there."""
     # See if we already added it.
     # Search in reverse
-    with open('corpus.txt') as ofile:
+    with open(CORPUSFILE) as ofile:
         for line in reversed(ofile.readlines()):
             if ' ' + term + ' ' in line.strip():
                 term = None
                 break
     # Add it if we never encountered it.
     if term:
-        with open('corpus.txt', 'a') as afile:
+        with open(CORPUSFILE, 'a') as afile:
             afile.write(term)
             afile.write('\n')
         # print("[ term '%s' added ]" % colorize(term, "green", True))
